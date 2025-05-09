@@ -3,7 +3,7 @@ require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-    solidity: "0.8.21",
+    solidity: "0.8.26",
     defaultNetwork: "neondevnet",
     etherscan: {
         apiKey: {
@@ -39,5 +39,8 @@ module.exports = {
             accounts: [process.env.PRIVATE_KEY_OWNER],
             chainId: 245022934
         }
+    },
+    gasReporter: {
+      enabled: true
     }
 };

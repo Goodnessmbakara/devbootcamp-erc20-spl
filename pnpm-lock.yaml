@@ -24,6 +24,9 @@ importers:
       '@nomicfoundation/hardhat-toolbox':
         specifier: ^5.0.0
         version: 5.0.0(f260222621b0bf88e3b4c90945d4b071)
+      hardhat:
+        specifier: ^2.24.0
+        version: 2.24.0(bufferutil@4.0.9)(ts-node@10.9.2(@types/node@22.15.17)(typescript@5.8.3))(typescript@5.8.3)(utf-8-validate@5.0.10)
 
 packages:
 
