@@ -3,7 +3,13 @@ const web3 = require("@solana/web3.js");
 const bs58 = require("bs58");
 const {
     getAssociatedTokenAddress,
-    createAssociatedTokenAccountInstruction
+    createAssociatedTokenAccountInstruction,
+    SystemProgram,
+    LAMPORTS_PER_SOL
+} = require('@solana/web3.js');
+const {
+    getAssociatedTokenAddress: getTokenATA,
+    createAssociatedTokenAccountInstruction: createTokenATAInstruction
 } = require('@solana/spl-token');
 const { config } = require('./config');
 
@@ -15,7 +21,7 @@ async function main() {
 
     const connection = new web3.Connection(SOLANA_NODE, "processed");
     const keypair = web3.Keypair.fromSecretKey(
-        bs58.default.decode(process.env.PRIVATE_KEY_SOLANA)
+        bs58.decode(process.env.PRIVATE_KEY_SOLANA)
     );
     const [user1] = await ethers.getSigners();
 
@@ -50,19 +56,19 @@ async function main() {
     console.log(`TestDevBootcamp deployed to ${TestDevBootcamp.target}`);
 
     const contractPublicKey = ethers.encodeBase58(await TestDevBootcamp.getNeonAddress(TestDevBootcamp.target));
-    console.log(contractPublicKey, 'contractPublicKey'); 
+    console.log(contractPublicKey, 'contractPublicKey');
 
     // setup sender & receiver ATA's with solana web3
     const randomSolanaAccount = web3.Keypair.generate();
 
-    const senderATA = await getAssociatedTokenAddress(
+    const senderATA = await getTokenATA(
         new web3.PublicKey(ethers.encodeBase58(tokenMint)),
         new web3.PublicKey(contractPublicKey),
         true
     );
     console.log(senderATA, 'senderATA');
 
-    const recipientATA = await getAssociatedTokenAddress(
+    const recipientATA = await getTokenATA(
         new web3.PublicKey(ethers.encodeBase58(tokenMint)),
         new web3.PublicKey(randomSolanaAccount.publicKey.toBase58()),
         true
@@ -71,13 +77,13 @@ async function main() {
 
     solanaTx = new web3.Transaction();
     solanaTx.add(
-        createAssociatedTokenAccountInstruction(
+        createTokenATAInstruction(
             keypair.publicKey,
             senderATA,
             new web3.PublicKey(contractPublicKey),
             new web3.PublicKey(ethers.encodeBase58(tokenMint))
         ),
-        createAssociatedTokenAccountInstruction(
+        createTokenATAInstruction(
             keypair.publicKey,
             recipientATA,
             new web3.PublicKey(randomSolanaAccount.publicKey.toBase58()),
@@ -90,7 +96,7 @@ async function main() {
         [keypair]
     );
     console.log(signature, 'transaction sender & recipient ATA\'s creation');
- 
+
     // make the token approval so the contract can handle the user's token deposit
     const amount = 10 * 10 ** 9; // 10 tokens
     tx = await ERC20ForSplMintable.approve(TestDevBootcamp.target, amount);
@@ -104,11 +110,21 @@ async function main() {
     );
     await tx.wait(1);
     console.log(tx, 'TestDevBootcamp transfer');
+
+    // ADVANCED TASK: Custom Solana composability via ICallSolana - Transfer 0.01 SOL
+    const solanaRecipient = randomSolanaAccount.publicKey;
+    const lamports = 0.01 * LAMPORTS_PER_SOL;
+    const solRecipientBytes32 = config.utils.publicKeyToBytes32(solanaRecipient.toBase58());
+
+    tx = await TestDevBootcamp.sendLamportsViaSolana(
+        solRecipientBytes32,
+        lamports.toString()
+    );
+    await tx.wait(1);
+    console.log('Advanced composability: Sent 0.01 SOL to Solana address via Neon');
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
+    console.error(error);
+    process.exitCode = 1;
 });

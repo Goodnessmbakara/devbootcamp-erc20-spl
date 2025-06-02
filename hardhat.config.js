@@ -32,7 +32,8 @@ module.exports = {
         neondevnet: {
             url: "https://devnet.neonevm.org",
             accounts: [process.env.PRIVATE_KEY_OWNER],
-            chainId: 245022926
+            chainId: 245022926,
+            timeout: 520_0000,   
         },
         neonmainnet: {
             url: "https://neon-proxy-mainnet.solana.p2p.org",
